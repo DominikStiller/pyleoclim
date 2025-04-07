@@ -27,7 +27,7 @@ setup(
     keywords=['Paleoclimate, Data Analysis, LiPD'],
     classifiers=[],
     install_requires=[
-        "pandas==2.1.4",
+        "pandas>=2.1.4",
         "kneed>=0.7.0",
         "statsmodels>=0.13.2",
         "seaborn>=0.13.0",
