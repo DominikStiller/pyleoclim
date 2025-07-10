@@ -1457,6 +1457,38 @@ class TestUISeriesFilter:
         val_diff = ts_bp.value - ts2.value
         assert np.mean(val_diff**2) < 0.1
 
+    @pytest.mark.parametrize(
+        "method", ["butterworth", "firwin", "lanczos"]
+    )
+    def test_filter_t2(self, method):
+        """Check that pad method argument is passed properly"""
+        t = np.linspace(0, 1, 1000)
+        sig1 = np.sin(2 * np.pi * 10 * t)
+        sig2 = np.sin(2 * np.pi * 20 * t)
+        sig = sig1 + sig2
+
+        ts = pyleo.Series(time=t, value=sig)
+        ts_lp_reflect = ts.filter(cutoff_freq=15, method=method, pad="reflect")
+        ts_lp_arima = ts.filter(cutoff_freq=15, method=method, pad="ARIMA")
+        val_diff = ts_lp_reflect.value - ts_lp_arima.value
+        assert np.mean(val_diff**2) > 0
+
+    @pytest.mark.parametrize(
+        "method", ["butterworth", "firwin", "lanczos"]
+    )
+    def test_filter_t3(self, method):
+        """Check that padFrac argument is passed properly"""
+        t = np.linspace(0, 1, 1000)
+        sig1 = np.sin(2 * np.pi * 10 * t)
+        sig2 = np.sin(2 * np.pi * 20 * t)
+        sig = sig1 + sig2
+
+        ts = pyleo.Series(time=t, value=sig)
+        ts_lp_defaultpad = ts.filter(cutoff_freq=15, method=method)
+        ts_lp_nopad = ts.filter(cutoff_freq=15, method=method, padFrac=0)
+        val_diff = ts_lp_defaultpad.value - ts_lp_nopad.value
+        assert np.mean(val_diff**2) > 0
+
 
 class TestUISeriesConvertTimeUnit:
     """Tests for Series.convert_time_unit"""
@@ -1520,11 +1552,8 @@ class TestUISeriesSort:
         assert np.all(np.diff(ts.time) >= 0)
 
 
-# @pytest.mark.xfail
-
-
+@pytest.mark.skipif(pd.__version__ > "2.1.4", reason="this bug https://github.com/pandas-dev/pandas/issues/57427")
 class TestResample:
-
     @pytest.mark.parametrize("rule", pyleo.utils.tsbase.MATCH_A)
     def test_resample_simple(self, rule, dataframe_dt, soi_metadata):
         ser = dataframe_dt.loc[:, 0]
@@ -1603,7 +1632,7 @@ class TestResample:
     #     assert np.abs(result_ser.index.to_numpy() - expected_ser.index.to_numpy()).max() <= 10
     #     np.testing.assert_array_equal(result_ser.to_numpy(), expected_ser.to_numpy())
     #     assert result.metadata == expected_metadata
-
+    
     def test_resample_invalid(self, dataframe_dt, basic_metadata):
         ser = dataframe_dt.loc[:, 0]
         ts = pyleo.Series.from_pandas(ser, basic_metadata)
